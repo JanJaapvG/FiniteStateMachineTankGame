@@ -1,0 +1,47 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class AttackState : State
+{
+    public void Start()
+    {
+        transitions = new List<Transition>
+        {
+            new Transition(() => Vector3.Distance(transform.position, tank.player.position) >= 200f && Vector3.Distance(transform.position, tank.player.position) <= 300f, gameObject.GetComponent<ChaseState>()),
+            new Transition(() => Vector3.Distance(transform.position, tank.player.position) >= 300f, gameObject.GetComponent<PatrolState>()),
+            new Transition(() => tank.health <= 50, gameObject.GetComponent<RecoveringStateHighLevel>()),
+            new Transition(() => tank.health <= 0, gameObject.GetComponent<DeadState>())
+        };
+    }
+
+    public override void OnEnable()
+    {
+        // aanpassingen aan het object in deze state
+        tank.curRotSpeed = 1.0f;
+        tank.curSpeed = 150.0f;
+    }
+
+    public override void OnDisable()
+    {
+        // wanneer aanpassingen weer uit gezet moeten worden
+        tank.lastPosition = transform.position;
+        tank.lastState = gameObject.GetComponent<AttackState>();
+    }
+
+    public override void Update()
+    {
+        //Set the target position as the player position
+        tank.destPos = tank.player.position;
+
+        //Always Turn the turret towards the player
+        Transform turret = tank.turret;
+        Quaternion turretRotation = Quaternion.LookRotation(tank.destPos - turret.position);
+        turret.rotation = Quaternion.Slerp(turret.rotation, turretRotation, Time.deltaTime * tank.curRotSpeed);
+
+        //Shoot bullet towards the player
+        tank.ShootBullet();
+
+    }
+
+}
